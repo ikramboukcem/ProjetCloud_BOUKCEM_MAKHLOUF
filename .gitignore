@@ -1,0 +1,4 @@
+lambdas/create_upload_url/lambda.zip
+infra/.terraform/
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
