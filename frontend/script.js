@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000"; // URL API de Meriem
+const API_BASE = "http://127.0.0.1:5000"; // URL API de Meriem
 
 // Navigation SPA
 function showSection(section) {
