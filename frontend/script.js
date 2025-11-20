@@ -73,7 +73,7 @@ async function getMetadata() {
     document.getElementById("metaTable").innerHTML = html;
 }
 
-// 🟢 AFFICHER UNE ALERTE BOOTSTRAP
+
 function showAlert(elementId, type, message) {
     document.getElementById(elementId).innerHTML =
         `<div class="alert alert-${type}">${message}</div>`;
