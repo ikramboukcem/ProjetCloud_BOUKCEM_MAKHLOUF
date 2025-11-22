@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from lambdas.create_upload_url.handler import lambda_handler
 import json
 
 app = Flask(__name__)
+CORS(app)   # ← Active les CORS pour toutes les routes
 
 
 @app.route("/upload-url", methods=["POST"])
