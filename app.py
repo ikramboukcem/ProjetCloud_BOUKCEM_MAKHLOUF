@@ -9,6 +9,10 @@ import requests
 app = Flask(__name__)
 CORS(app)   # ← Active les CORS pour toutes les routes
 
+from datetime import datetime
+
+# Simule une table DynamoDB en mémoire
+DOCUMENTS = {}
 
 @app.route("/upload-url", methods=["POST"])
 def generate_upload_url():
@@ -77,7 +81,7 @@ def upload_from_url():
     except Exception as e:
         return jsonify({"error": f"Exception while downloading file: {str(e)}"}), 500
 
-    # 4) Envoyer les bytes vers MinIO en utilisant l'URL pré-signée
+        # 4) Envoyer les bytes vers MinIO en utilisant l'URL pré-signée
     try:
         put_resp = requests.put(upload_url, data=resp.content)
         if not put_resp.ok:
@@ -85,11 +89,49 @@ def upload_from_url():
     except Exception as e:
         return jsonify({"error": f"Exception while uploading to storage: {str(e)}"}), 500
 
-    # 5) Tout s'est bien passé -> on renvoie l'ID au front
+    # 5) Sauvegarder les métadonnées en mémoire (simulation DynamoDB)
+    content_type = resp.headers.get("Content-Type", "application/octet-stream")
+    size_bytes = len(resp.content)
+
+    DOCUMENTS[document_id] = {
+        "name": file_name,
+        "type": content_type,
+        "size": size_bytes,
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "status": "uploaded",
+    }
+
+    # 6) Tout s'est bien passé -> on renvoie l'ID au front
     return jsonify({
         "documentId": document_id,
         "status": "uploaded"
     }), 200
+
+
+@app.route("/status/<path:document_id>", methods=["GET"])
+def get_status(document_id):
+    """
+    Retourne uniquement le statut du document.
+    Exemple : { "status": "uploaded" }
+    """
+    doc = DOCUMENTS.get(document_id)
+    if not doc:
+        return jsonify({"error": "Document not found"}), 404
+
+    return jsonify({"status": doc.get("status", "unknown")}), 200
+
+
+@app.route("/metadata/<path:document_id>", methods=["GET"])
+def get_metadata(document_id):
+    """
+    Retourne toutes les métadonnées connues pour ce document.
+    """
+    doc = DOCUMENTS.get(document_id)
+    if not doc:
+        return jsonify({"error": "Document not found"}), 404
+
+    return jsonify(doc), 200
+
 
 
 if __name__ == "__main__":
