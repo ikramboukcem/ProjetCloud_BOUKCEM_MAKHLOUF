@@ -14,6 +14,21 @@ from datetime import datetime
 # Simule une table DynamoDB en mémoire
 DOCUMENTS = {}
 
+def process_document(document_id: str) -> bool:
+    """
+    Simule un traitement de document :
+    - change le statut en 'processed'
+    - ajoute une date processedAt
+    """
+    doc = DOCUMENTS.get(document_id)
+    if not doc:
+        return False
+
+    doc["status"] = "processed"
+    doc["processedAt"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return True
+
+
 @app.route("/upload-url", methods=["POST"])
 def generate_upload_url():
     """
@@ -81,7 +96,7 @@ def upload_from_url():
     except Exception as e:
         return jsonify({"error": f"Exception while downloading file: {str(e)}"}), 500
 
-        # 4) Envoyer les bytes vers MinIO en utilisant l'URL pré-signée
+    # 4) Envoyer les bytes vers MinIO en utilisant l'URL pré-signée
     try:
         put_resp = requests.put(upload_url, data=resp.content)
         if not put_resp.ok:
@@ -98,14 +113,18 @@ def upload_from_url():
         "type": content_type,
         "size": size_bytes,
         "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "uploaded",
+        "status": "uploaded",  # statut initial
     }
 
-    # 6) Tout s'est bien passé -> on renvoie l'ID au front
+    # 6) TRAITEMENT AUTOMATIQUE : on passe le doc en 'processed'
+    process_document(document_id)
+
+    # 7) Tout s'est bien passé -> on renvoie l'ID au front
     return jsonify({
         "documentId": document_id,
-        "status": "uploaded"
+        "status": "processed"
     }), 200
+
 
 
 @app.route("/status/<path:document_id>", methods=["GET"])
